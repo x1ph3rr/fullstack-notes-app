@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
-import { eventNames } from "process";
+import { networkInterfaces } from "os";
 
 type Note = {
   id: number;
@@ -16,24 +16,46 @@ export default function App() {
 
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
+  useEffect(()=> {
+    const fetchNotes = async () => {
+      try{
+        const response = await fetch("http://localhost:5000/api/notes");
+        const notes: Note[] = await response.json();
+        setNotes(notes);
+      } catch (e){
+        console.log(e);
+      }
+    };
+    fetchNotes();
+  }, []);
+
   const handleNoteClick = (note: Note) => {
     setSelectedNote(note);
     setTitle(note.title);
     setContent(note.content);
   };
 
-  const handleAddNote = (event: React.FormEvent) => {
+  const handleAddNote = async(event: React.FormEvent) => {
     event.preventDefault();
-
-    const newNote: Note = {
-      id: Date.now(),
-      title: title,
-      content: content,
-    };
-
-    setNotes([newNote, ...notes]);
-    setTitle("");
-    setContent("");
+    try{
+      
+      const response = await fetch("http://localhost:5000/api/notes",{
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          content,
+        }),
+      })
+      const newNote = await response.json();
+      setNotes([newNote, ...notes]);
+      setTitle("");
+      setContent("");
+    } catch (e){
+      console.log(e);
+    }
   };
 
   const handleUpdateNote = (event: React.FormEvent) => {
@@ -63,12 +85,22 @@ export default function App() {
     setSelectedNote(null);
   };
 
-  const deleteNote = (event: React.MouseEvent, noteId: number) =>{
+  const deleteNote = async (event: React.MouseEvent, noteId: number) =>{
     event.stopPropagation();
-
-    const updatedNotes = notes.filter((note)=> note.id!==noteId);
-
-    setNotes(updatedNotes);
+    try{
+      await fetch(
+        `http://localhost:5000/api/notes/${noteId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      const updatedNotes = notes.filter(
+        (note)=> note.id!==noteId
+      );
+      setNotes(updatedNotes);
+    } catch(e){
+      console.log(e);
+    }
   };
 
   return (
