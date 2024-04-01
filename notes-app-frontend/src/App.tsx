@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { networkInterfaces } from "os";
 
 type Note = {
   id: number;
@@ -58,7 +57,7 @@ export default function App() {
     }
   };
 
-  const handleUpdateNote = (event: React.FormEvent) => {
+  const handleUpdateNote = async (event: React.FormEvent,) => {
     event.preventDefault();
 
     if(!selectedNote){
@@ -70,6 +69,26 @@ export default function App() {
       title: title,
       content: content,
     };
+
+    try {
+      await fetch(
+        `http://localhost:5000/api/notes/${updatedNote.id}`,
+        {
+          method:"PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title,
+            content,
+          }),
+        }
+      )
+    } catch(e){
+      console.log(e);
+    }
+
+   
 
     const updatedNoteList = notes.map((note)=> (note.id=== selectedNote.id? updatedNote: note));
 
